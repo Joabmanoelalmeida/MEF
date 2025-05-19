@@ -339,7 +339,7 @@ if __name__ == "__main__":
     sp.pprint(K_global_gauss_reduzido)
 
     F_global = sp.zeros(total_no, 1)
-    F_global[17] = -100 
+    F_global[17] = -10 
     print("\nVetor de forças nodais equivalentes F:")
     sp.pprint(F_global)
 
