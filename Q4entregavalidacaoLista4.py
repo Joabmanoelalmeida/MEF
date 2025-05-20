@@ -371,7 +371,7 @@ if __name__ == "__main__":
     
     u_global_gauss_reduzido = deslocamento_global(u_reduzido_gauss_reduzido, novo_no, total_no)
     print("\nVetor de deslocamento global u gauss reduzido:")
-    sp.pprint(u_global)
+    sp.pprint(u_global_gauss_reduzido)
 
     print("\nDeformações e tensões em cada elemento:")
         

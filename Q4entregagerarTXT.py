@@ -1,6 +1,7 @@
 import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 
 def funcao_formaQ4(n, e):
     N14Q = 0.25*(1 - e)*(1 - n)
@@ -212,6 +213,8 @@ def matrix_Me_reduzido(M_global, constrained_dofs):
     return M_reduzido
 
 if __name__ == "__main__":
+    
+    sys.stdout = open("resultados.txt", "w", encoding="utf-8")
 
     n, e = sp.symbols('n e')
 
@@ -597,6 +600,8 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
+    
+    sys.stdout.close()
 
     
 
