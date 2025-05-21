@@ -169,6 +169,21 @@ def deformacao_gauss(u_local, n, e, coords, gauss_points):
         defor.append(tens)
     return defor 
 
+def deformacao_gauss_reduzido(u_local, n, e, coords, gauss_points_reduzido):
+    defor = []
+
+    Be_sym = matrix_Be(n, e, coords)
+    Be_func = sp.lambdify((n, e), Be_sym, 'numpy')
+    for pt in gauss_points_reduzido:
+        if len(pt) == 3:
+            n_val, e_val, _ = pt
+        else:
+            n_val, e_val = pt
+        Be_numerico = sp.Matrix(np.array(Be_func(n_val, e_val)))
+        tens = Be_numerico * u_local
+        defor.append(tens)
+    return defor
+
 def tensoes_gauss(u_local, n, e, coords, gauss_points, D):
     strains = deformacao_gauss(u_local, n, e, coords, gauss_points)
     stresses = []
@@ -177,8 +192,30 @@ def tensoes_gauss(u_local, n, e, coords, gauss_points, D):
         stresses.append(stress)
     return stresses
 
+def tensoes_gauss_reduzido(u_local, n, e, coords, gauss_points_reduzido, D):
+    strains = deformacao_gauss(u_local, n, e, coords, gauss_points_reduzido)
+    stresses = []
+    for strain in strains:
+        stress = D * strain
+        stresses.append(stress)
+    return stresses
+
 def matriz_E():
-    a, b = 1 + sp.sqrt(3), 1 - sp.sqrt(3)
+    a, b = 2.732050808, -0.732050808
+    E = sp.Matrix([
+                [a**2, a**2, b**2, b**2, a*b, a*b, a*b, a*b, 4],
+                [b**2, a**2, a**2, b**2, a*b, a*b, a*b, a*b, 4],
+                [b**2, b**2, a**2, a**2, a*b, a*b, a*b, a*b, 4],
+                [a**2, b**2, b**2, a**2, a*b, a*b, a*b, a*b, 4],
+                [a*b, a*b, a*b, a*b, b**2, a**2, b**2, a**2, 4],
+                [a*b, a*b, a*b, a*b, a**2, b**2, a**2, b**2, 4],
+                [a*b, a*b, a*b, a*b, a**2, b**2, a**2, b**2, 4],
+                [a*b, a*b, a*b, a*b, b**2, a**2, b**2, a**2, 4]
+            ])/36
+    return E
+
+def matriz_E_reduzido():
+    a, b = 2.732050808, -0.732050808
     E = sp.Matrix([
                 [a**2/4, a*b/4, b**2/4, a*b/4],
                 [a*b/4, a**2/4, a*b/4, b**2/4],
@@ -194,7 +231,7 @@ def matriz_E():
 def tensoes_nos(u_local, n, e, coords, gauss_points, D):
     t_gauss = tensoes_gauss(u_local, n, e, coords, gauss_points, D)
 
-    if len(t_gauss) > 4:
+    if len(t_gauss) > 9:
 
         t_gauss = [t_gauss[i] for i in (0, 2, 8, 6)]
     tx_gauss = sp.Matrix([stress[0] for stress in t_gauss])
@@ -203,8 +240,53 @@ def tensoes_nos(u_local, n, e, coords, gauss_points, D):
     tx_nos = matriz_E() * tx_gauss
     ty_nos = matriz_E() * ty_gauss
     txy_nos = matriz_E() * txy_gauss
-    t_nos = sp.Matrix.hstack(tx_nos, ty_nos, txy_nos).evalf()
+    t_nos = sp.Matrix.hstack(tx_nos, ty_nos, txy_nos)
     return t_nos
+
+def deformacao_nos(u_local, n, e, coords, gauss_points):
+    defor_gauss = deformacao_gauss(u_local, n, e, coords, gauss_points)
+
+    if len(defor_gauss) > 9:
+
+        defor_gauss = [defor_gauss[i] for i in (0, 2, 8, 6)]
+    deforx_gauss = sp.Matrix([strain[0] for strain in defor_gauss])
+    defory_gauss = sp.Matrix([strain[1] for strain in defor_gauss])
+    deforxy_gauss = sp.Matrix([strain[2] for strain in defor_gauss])
+    deforx_nos = matriz_E() * deforx_gauss
+    defory_nos = matriz_E() * defory_gauss
+    deforxy_nos = matriz_E() * deforxy_gauss
+    defor_nos = sp.Matrix.hstack(deforx_nos, defory_nos, deforxy_nos)
+    return defor_nos
+
+def tensoes_nos_reduzido(u_local, n, e, coords, gauss_points_reduzido, D):
+    t_gauss = tensoes_gauss(u_local, n, e, coords, gauss_points_reduzido, D)
+
+    if len(t_gauss) > 4:
+
+        t_gauss = [t_gauss[i] for i in (0, 2, 8, 6)]
+    tx_gauss = sp.Matrix([stress[0] for stress in t_gauss])
+    ty_gauss = sp.Matrix([stress[1] for stress in t_gauss])
+    txy_gauss = sp.Matrix([stress[2] for stress in t_gauss])
+    tx_nos = matriz_E_reduzido() * tx_gauss
+    ty_nos = matriz_E_reduzido() * ty_gauss
+    txy_nos = matriz_E_reduzido() * txy_gauss
+    t_nos = sp.Matrix.hstack(tx_nos, ty_nos, txy_nos)
+    return t_nos
+
+def deformacao_nos_reduzido(u_local, n, e, coords, gauss_points_reduzido):
+    defor_gauss_reduzido = deformacao_gauss(u_local, n, e, coords, gauss_points_reduzido)
+
+    if len(defor_gauss_reduzido) > 4:
+
+        defor_gauss_reduzido = [defor_gauss_reduzido[i] for i in (0, 2, 8, 6)]
+    deforx_gauss_reduzido = sp.Matrix([strain[0] for strain in defor_gauss_reduzido])
+    defory_gauss_reduzido = sp.Matrix([strain[1] for strain in defor_gauss_reduzido])
+    deforxy_gauss_reduzido = sp.Matrix([strain[2] for strain in defor_gauss_reduzido])
+    deforx_nos = matriz_E_reduzido() * deforx_gauss_reduzido
+    defory_nos = matriz_E_reduzido() * defory_gauss_reduzido
+    deforxy_nos = matriz_E_reduzido() * deforxy_gauss_reduzido
+    deformacao_nos_reduzido = sp.Matrix.hstack(deforx_nos, defory_nos, deforxy_nos)
+    return deformacao_nos_reduzido
 
 def matriz_Ke_global(global_coords, elements, n, e, D, W, gauss_points):
     total_dofs = global_coords.shape[0] * 2
@@ -576,21 +658,17 @@ if __name__ == "__main__":
         t_nos = tensoes_nos(u_local, n, e, local_coords, gauss_pontos, D)
         for i, row in enumerate(t_nos.tolist(), start=1):
             print(f"Nó {i}: {row}")
-            
+        
         print("Deformações nos nós do elemento:")
-        strains_nos = []
-        D_inv = D.inv()
-        for i, row in enumerate(t_nos.tolist(), start=1):
-            sigma_node = sp.Matrix(row)
-            epsilon_node = D_inv * sigma_node
-            strains_nos.append(epsilon_node)
-            print(f"Nó {i} - Deformação: {epsilon_node.tolist()}")
+        defor_nos = deformacao_nos(u_local, n, e, local_coords, gauss_pontos)
+        for i, row in enumerate(defor_nos.tolist(), start=1):
+            print(f"Nó {i}: {row}")
             
     for idx, elem in enumerate(elementos):
         local_coords = sp.Matrix([global_coords[i, :] for i in elem])
         u_local_gauss_reduzido = sp.Matrix(2*len(elem), 1, lambda i, _: u_global_gauss_reduzido[elem[i//2]*2 + (i % 2)])
-        defor_gauss_reduzido = deformacao_gauss(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos_reduzido)
-        tens_gauss_reduzido = tensoes_gauss(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos_reduzido, D)
+        defor_gauss_reduzido = deformacao_gauss_reduzido(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos_reduzido)
+        tens_gauss_reduzido = tensoes_gauss_reduzido(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos_reduzido, D)
         print(f"\nElemento {idx+1}:")
         print("Deformações nos pontos de Gauss reduzido:")
         for pt_idx, d in enumerate(defor_gauss_reduzido, start=1):
@@ -601,17 +679,13 @@ if __name__ == "__main__":
             print(f"  Gauss reduzido {pt_idx}:")
             sp.pprint(t)
         print("Tensões nos nós do elemento gauss reduzido:")
-        t_nos_gauss_reduzido = tensoes_nos(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos, D)
+        t_nos_gauss_reduzido = tensoes_nos_reduzido(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos_reduzido, D)
         for i, row in enumerate(t_nos_gauss_reduzido.tolist(), start=1):
             print(f"Nó {i}: {row}")
         print("Deformações nos nós do elemento:")
-        strains_nos_gauss_reduzido = []
-        D_inv = D.inv()
-        for i, row in enumerate(t_nos.tolist(), start=1):
-            sigma_node_gauss_reduzido = sp.Matrix(row)
-            epsilon_node_gauss_reduzido = D_inv * sigma_node_gauss_reduzido
-            strains_nos_gauss_reduzido.append(epsilon_node_gauss_reduzido)
-            print(f"Nó {i} - Deformação: {epsilon_node_gauss_reduzido.tolist()}")
+        defor_nos = deformacao_nos_reduzido(u_local, n, e, local_coords, gauss_pontos_reduzido)
+        for i, row in enumerate(defor_nos.tolist(), start=1):
+            print(f"Nó {i}: {row}")
             
     rho = 7850   
     M_global = matriz_Me_global(global_coords, elementos, n, e, rho, espessura, w_dict, gauss_pontos)

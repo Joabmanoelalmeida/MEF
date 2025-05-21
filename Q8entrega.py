@@ -199,6 +199,20 @@ def tensoes_gauss_reduzido(u_local, n, e, coords, gauss_points_reduzido, D):
         stresses.append(stress)
     return stresses
 
+def matriz_E():
+    a, b = 2.732050808, -0.732050808
+    E = sp.Matrix([
+                [a**2, a**2, b**2, b**2, a*b, a*b, a*b, a*b, 4],
+                [b**2, a**2, a**2, b**2, a*b, a*b, a*b, a*b, 4],
+                [b**2, b**2, a**2, a**2, a*b, a*b, a*b, a*b, 4],
+                [a**2, b**2, b**2, a**2, a*b, a*b, a*b, a*b, 4],
+                [a*b, a*b, a*b, a*b, b**2, a**2, b**2, a**2, 4],
+                [a*b, a*b, a*b, a*b, a**2, b**2, a**2, b**2, 4],
+                [a*b, a*b, a*b, a*b, a**2, b**2, a**2, b**2, 4],
+                [a*b, a*b, a*b, a*b, b**2, a**2, b**2, a**2, 4]
+            ])/36
+    return E
+
 def matriz_E_reduzido():
     a, b = 2.732050808, -0.732050808
     E = sp.Matrix([
@@ -216,30 +230,30 @@ def matriz_E_reduzido():
 def tensoes_nos(u_local, n, e, coords, gauss_points, D):
     t_gauss = tensoes_gauss(u_local, n, e, coords, gauss_points, D)
 
-    if len(t_gauss) > 4:
+    if len(t_gauss) > 9:
 
         t_gauss = [t_gauss[i] for i in (0, 2, 8, 6)]
     tx_gauss = sp.Matrix([stress[0] for stress in t_gauss])
     ty_gauss = sp.Matrix([stress[1] for stress in t_gauss])
     txy_gauss = sp.Matrix([stress[2] for stress in t_gauss])
-    tx_nos = matriz_E_reduzido() * tx_gauss
-    ty_nos = matriz_E_reduzido() * ty_gauss
-    txy_nos = matriz_E_reduzido() * txy_gauss
+    tx_nos = matriz_E() * tx_gauss
+    ty_nos = matriz_E() * ty_gauss
+    txy_nos = matriz_E() * txy_gauss
     t_nos = sp.Matrix.hstack(tx_nos, ty_nos, txy_nos)
     return t_nos
 
 def deformacao_nos(u_local, n, e, coords, gauss_points):
     defor_gauss = deformacao_gauss(u_local, n, e, coords, gauss_points)
 
-    if len(defor_gauss) > 4:
+    if len(defor_gauss) > 9:
 
         defor_gauss = [defor_gauss[i] for i in (0, 2, 8, 6)]
     deforx_gauss = sp.Matrix([strain[0] for strain in defor_gauss])
     defory_gauss = sp.Matrix([strain[1] for strain in defor_gauss])
     deforxy_gauss = sp.Matrix([strain[2] for strain in defor_gauss])
-    deforx_nos = matriz_E_reduzido() * deforx_gauss
-    defory_nos = matriz_E_reduzido() * defory_gauss
-    deforxy_nos = matriz_E_reduzido() * deforxy_gauss
+    deforx_nos = matriz_E() * deforx_gauss
+    defory_nos = matriz_E() * defory_gauss
+    deforxy_nos = matriz_E() * deforxy_gauss
     defor_nos = sp.Matrix.hstack(deforx_nos, defory_nos, deforxy_nos)
     return defor_nos
 
