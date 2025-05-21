@@ -161,10 +161,10 @@ def tensoes_gauss_reduzido(u_local, n, e, coords, gauss_points_reduzido, D):
 def matriz_E():
     a, b = 1 + sp.sqrt(3), 1 - sp.sqrt(3)
     E = sp.Matrix([
-                [a**2/4, a*b/4, b**2/4, a*b/4],
-                [a*b/4, a**2/4, a*b/4, b**2/4],
-                [b**2/4, a*b/4, a**2/4, a*b/4],
-                [a*b/4, b**2/4, a*b/4, a**2/4]
+                [a/4, a/4, b/4, b/4],
+                [b/4, a/4, a/4, b/4],
+                [b/4, b/4, a/4, a/4],
+                [a/4, b/4, b/4, a/4]
             ])
     return E
 
