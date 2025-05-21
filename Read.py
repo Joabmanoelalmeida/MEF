@@ -72,6 +72,7 @@ def normalize_vector(vx: float, vy: float) -> Tuple[float, float]:
         raise ValueError("Vector norm is zero.")
     return vx / norm, vy / norm
 
+# Leitor genérico de arquivos .inp do ABAQUS
 def ler_inp(path: str):
     coords = []
     conn = []
@@ -107,7 +108,9 @@ def ler_inp(path: str):
         if l == '' or l.startswith('**'):
             continue
 
+        # Identifica se l é um comando
         if l.startswith('*'):
+            # Resetar todas as flags locais de blocos
             in_boundary = in_cload = in_surface = in_nset = in_elset = False
             in_nodes = in_elements = in_section = in_elastic = False
 
@@ -248,6 +251,7 @@ def ler_inp(path: str):
                 idx = 2 * nid - 1 if direcao == 1 else 2 * nid
                 f[idx] += valor
 
+    # Preencher coords e conn ordenados
     node_ids_sorted = sorted(nodes.keys())
     nodemap = {nid: idx for idx, nid in enumerate(node_ids_sorted)}
     coords = np.array([nodes[nid] for nid in node_ids_sorted])
@@ -257,6 +261,10 @@ def ler_inp(path: str):
     Elist = [E] * len(conn)
     nulist = [nu] * len(conn)
     rholist = [rho] * len(conn)
+
+    # Aplicar carregamentos distribuídos às superfícies
+    if len(f) == 0:
+        f = np.zeros(2 * len(nodes))
 
     for surf_name, (elset_name, face) in surfaces.items():
         if surf_name in dsloads:
@@ -271,7 +279,7 @@ def ler_inp(path: str):
     return coords, conn, Elist, nulist, rholist, esp, plane_state, gdl_restritos, f
 
 if __name__ == "__main__":
-    path = "beam_08.inp"  # Substitua pelo caminho correto do arquivo .inp
+    path = "Q8_24.inp"  # Substitua pelo caminho correto do arquivo .inp
     coords, conn, Elist, nulist, rholist, esp, plane_state, gdl_restritos, f = ler_inp(path)
 
     print("✅ Arquivo lido com sucesso!")
