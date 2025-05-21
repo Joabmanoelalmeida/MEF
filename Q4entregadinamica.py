@@ -1,7 +1,6 @@
 import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 
 def funcao_formaQ4(n, e):
     N14Q = 0.25*(1 - e)*(1 - n)
@@ -117,42 +116,8 @@ def deformacao_gauss(u_local, n, e, coords, gauss_points):
         defor.append(tens)
     return defor 
 
-def deformacao_gauss_reduzido(u_local, n, e, coords, gauss_points_reduzido):
-    defor = []
-    for n_val, e_val in gauss_points_reduzido:
-        Be_numerico = matrix_Be(n, e, coords).subs({n: n_val, e: e_val})
-        tens = Be_numerico * u_local
-        defor.append(tens)
-    return defor
-
-def deformacao_nos_reduzido(u_local, n, e, coords, gauss_points_reduzido):
-    
-    defor = deformacao_gauss_reduzido(u_local, n, e, coords, gauss_points_reduzido)
-    
-    dx_gauss = sp.Matrix([defor[0] for defor in defor])
-    dy_gauss = sp.Matrix([defor[1] for defor in defor])
-    dxy_gauss = sp.Matrix([defor[2] for defor in defor])
-
-    defor_vec = sp.Matrix([1,1,1,1])
-    
-    dx_nos = defor_vec * dx_gauss
-    dy_nos = defor_vec * dy_gauss
-    dxy_nos = defor_vec * dxy_gauss
-    
-    defor_nos_reduzido = sp.Matrix.hstack(dx_nos, dy_nos, dxy_nos)
-
-    return defor_nos_reduzido
-
 def tensoes_gauss(u_local, n, e, coords, gauss_points, D):
     strains = deformacao_gauss(u_local, n, e, coords, gauss_points)
-    stresses = []
-    for strain in strains:
-        stress = D * strain
-        stresses.append(stress)
-    return stresses
-
-def tensoes_gauss_reduzido(u_local, n, e, coords, gauss_points_reduzido, D):
-    strains = deformacao_gauss(u_local, n, e, coords, gauss_points_reduzido)
     stresses = []
     for strain in strains:
         stress = D * strain
@@ -162,10 +127,10 @@ def tensoes_gauss_reduzido(u_local, n, e, coords, gauss_points_reduzido, D):
 def matriz_E():
     a, b = 1 + sp.sqrt(3), 1 - sp.sqrt(3)
     E = sp.Matrix([
-                [a/4, a/4, b/4, b/4],
-                [b/4, a/4, a/4, b/4],
-                [b/4, b/4, a/4, a/4],
-                [a/4, b/4, b/4, a/4]
+                [a**2/4, a*b/4, b**2/4, a*b/4],
+                [a*b/4, a**2/4, a*b/4, b**2/4],
+                [b**2/4, a*b/4, a**2/4, a*b/4],
+                [a*b/4, b**2/4, a*b/4, a**2/4]
             ])
     return E
 
@@ -182,24 +147,6 @@ def tensoes_nos(u_local, n, e, coords, gauss_points, D):
     txy_nos = matriz_E() * txy_gauss
     
     t_nos = sp.Matrix.hstack(tx_nos, ty_nos, txy_nos).evalf()
-    return t_nos
-
-def tensoes_nos_reduzido(u_local, n, e, coords, gauss_pontos_reduzido, D):
-
-    t_gauss = tensoes_gauss_reduzido(u_local, n, e, coords, gauss_pontos_reduzido, D)
-
-    tx_gauss = sp.Matrix([stress[0] for stress in t_gauss])
-    ty_gauss = sp.Matrix([stress[1] for stress in t_gauss])
-    txy_gauss = sp.Matrix([stress[2] for stress in t_gauss])
-
-    ones_vec = sp.Matrix([1,1,1,1])
-    
-    tx_nos = ones_vec * tx_gauss
-    ty_nos = ones_vec * ty_gauss
-    txy_nos = ones_vec * txy_gauss
-    
-    t_nos = sp.Matrix.hstack(tx_nos, ty_nos, txy_nos)
-
     return t_nos
 
 def matriz_Ke_global(global_coords, elements, n, e, D, W, gauss_points):
@@ -265,8 +212,6 @@ def matrix_Me_reduzido(M_global, constrained_dofs):
     return M_reduzido
 
 if __name__ == "__main__":
-    
-    sys.stdout = open("resultados.txt", "w", encoding="utf-8")
 
     n, e = sp.symbols('n e')
 
@@ -509,8 +454,8 @@ if __name__ == "__main__":
     for idx, elem in enumerate(elementos):
         local_coords = sp.Matrix([global_coords[i, :] for i in elem])
         u_local_gauss_reduzido = sp.Matrix(8, 1, lambda i, _: u_global_gauss_reduzido[elem[i//2]*2 + (i % 2)])
-        defor_gauss_reduzido = deformacao_gauss_reduzido(u_local, n, e, local_coords, gauss_pontos_reduzido)
-        tens_gauss_reduzido = tensoes_gauss_reduzido(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos_reduzido, D)
+        defor_gauss_reduzido = deformacao_gauss(u_local, n, e, local_coords, gauss_pontos_reduzido)
+        tens_gauss_reduzido = tensoes_gauss(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos_reduzido, D)
         print(f"\nElemento {idx+1}:")
         print("Deformações nos pontos de Gauss reduzido:")
         for pt_idx, d in enumerate(defor_gauss_reduzido, start=1):
@@ -522,22 +467,18 @@ if __name__ == "__main__":
             sp.pprint(t)
         print("Tensões nos nós do elemento gauss reduzido:")
         
-        t_nos_gauss_reduzido = tensoes_nos_reduzido(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos_reduzido, D)
+        t_nos_gauss_reduzido = tensoes_nos(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos, D)
         for i, row in enumerate(t_nos_gauss_reduzido.tolist(), start=1):
             print(f"Nó {i}: {row}")
             
-        defor_nos_gauss_reduzido = deformacao_nos_reduzido(u_local_gauss_reduzido, n, e, local_coords, gauss_pontos_reduzido)
-        for i, row in enumerate(defor_nos_gauss_reduzido.tolist(), start=1):
-            print(f"Nó {i}: {row}")
-            
-        '''print("Deformações nos nós do elemento:")
+        print("Deformações nos nós do elemento:")
         strains_nos_gauss_reduzido = []
         D_inv = D.inv()
         for i, row in enumerate(t_nos.tolist(), start=1):
             sigma_node_gauss_reduzido = sp.Matrix(row)
             epsilon_node_gauss_reduzido = D_inv * sigma_node_gauss_reduzido
             strains_nos_gauss_reduzido.append(epsilon_node_gauss_reduzido)
-            print(f"Nó {i} - Deformação: {epsilon_node_gauss_reduzido.tolist()}")'''
+            print(f"Nó {i} - Deformação: {epsilon_node_gauss_reduzido.tolist()}")
             
     
 
@@ -656,8 +597,6 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
-    
-    sys.stdout.close()
 
     
 
