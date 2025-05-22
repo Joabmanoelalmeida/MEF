@@ -885,6 +885,7 @@ if __name__ == "__main__":
     #F_global[27] = -15
     for i, valor in enumerate(f):
         F_global[i] = valor
+    print("\nVetor de forças nodais equivalentes F:")
  #   print("\nVetor de forças nodais equivalentes F:")
  #   sp.pprint(F_global)
  

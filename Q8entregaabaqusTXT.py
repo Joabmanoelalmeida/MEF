@@ -639,10 +639,10 @@ def ler_inp(path: str):
 
 if __name__ == "__main__":
     
-    sys.stdout = open("resultados.txt", "w", encoding="utf-8")
-    
     path = "Q8_24.inp"  # Substitua pelo caminho correto do arquivo .inp
     coords, conn, Elist, nulist, rholist, esp, plane_state, gdl_restritos, f = ler_inp(path)
+
+    sys.stdout = open("resultados_Q8.txt", "w", encoding="utf-8")
 
     n, e = sp.symbols('n e')
 
@@ -888,7 +888,6 @@ if __name__ == "__main__":
     #F_global[27] = -15
     for i, valor in enumerate(f):
         F_global[i] = valor
-    print("\nVetor de forças nodais equivalentes F:")
  #   print("\nVetor de forças nodais equivalentes F:")
  #   sp.pprint(F_global)
  

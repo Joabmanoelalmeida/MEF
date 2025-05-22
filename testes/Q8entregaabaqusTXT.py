@@ -2,6 +2,7 @@ import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
 from typing import List, Tuple
+import sys
 
 def obter_face_nodes(nodes_e: List[int], face: str) -> List[int]:
     n = len(nodes_e)
@@ -638,6 +639,8 @@ def ler_inp(path: str):
 
 if __name__ == "__main__":
     
+    sys.stdout = open("resultados.txt", "w", encoding="utf-8")
+    
     path = "Q8_24.inp"  # Substitua pelo caminho correto do arquivo .inp
     coords, conn, Elist, nulist, rholist, esp, plane_state, gdl_restritos, f = ler_inp(path)
 
@@ -885,6 +888,7 @@ if __name__ == "__main__":
     #F_global[27] = -15
     for i, valor in enumerate(f):
         F_global[i] = valor
+    print("\nVetor de forças nodais equivalentes F:")
  #   print("\nVetor de forças nodais equivalentes F:")
  #   sp.pprint(F_global)
  
@@ -1071,4 +1075,6 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
+    
+    sys.stdout.close()
 
